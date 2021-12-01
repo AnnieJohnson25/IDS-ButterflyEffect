@@ -8,7 +8,7 @@ st.title('COVID-19 Out of the box viewpoints')
 
 image = Image.open('out-of-the-box.jpg')
 st.image(image, caption='COVID-19 Out of the box viewpoints')
-
+ 
 ########################################## LOADING DATA #################################################
 
 @st.cache
