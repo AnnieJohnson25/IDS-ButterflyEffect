@@ -65,10 +65,10 @@ st.video('https://youtu.be/fDek6cYijxI')
 
 st.header('Project Team')
 st.write("""
-### 1. Abhishree Shetty
-### 2. Sundar Anand
-### 3. Annie Johnson
-### 4. Jayant
+#### 1. Abhishree Shetty
+#### 2. Sundar Anand
+#### 3. Annie Johnson
+#### 4. Jayant
 """)
 
 st.title('Visualizations')
@@ -302,6 +302,11 @@ st.header('Climate Data')
 image_climate = Image.open('Data/climate.jpg')
 st.image(image_climate, width = 400)
 
+########################################## CONCLUSION #################################################
+st.subheader("""
+Seems like there were quite a few good things that happened during the pandemic which were overlooked.
+Good that we were able to catch a few of them here!!
+""")
 
 ########################################## DATASET #################################################
 
@@ -351,8 +356,10 @@ st.title('Advanced Machine Learning')
 
 st.title('Exploratory Data Analysis')
 
-st.write("The complete EDA for this project can be found at https://colab.research.google.com/drive/1h-vzSvoJ08Y-FarTSj5-7y3DQraP77jO?authuser=1#scrollTo=6Cl_vz_t0MLt")
+st.write("The complete EDA notebook for this project can be found [here](https://github.com/abhishreeshetty/IDS-ButterflyEffect/blob/main/FinalProject_EDA.ipynb)")
 
 # Images
 images = ['Data/gaming_eda.png', 'Data/flights_eda.png', 'Data/suicide_eda.png', 'Data/climate_eda.png']
 st.image(images, use_column_width=True)
+
+st.header('Thank you!!')
