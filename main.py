@@ -157,6 +157,15 @@ st.write("""
 4. Climate change across the globe
 """)
 
+st.write("""
+#### Potential Research Questions?
+1. Do trends in the COVID data have correlations to aspects of the world like Flights Traffic, Climate, Gaming that could've been overlooked by media?
+2. Can COVID data be correlated to the trends in Suicide data? If so, did it impact differently for different age groups?
+3. What role did video games play during the pandemic? 
+4. Do the trends in flight traffic from U.S. to other countries during COVID tell us something new? Is the flight traffic reduction directly correlated to the trend in the COVID cases for that country?
+5. Did the restrictions posed by COVID help combat climate issue? If so, how does the trend look like for different countries?
+""")
+
 st.header('Demo')
 st.video('https://youtu.be/fDek6cYijxI')
 
