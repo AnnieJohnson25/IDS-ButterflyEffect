@@ -9,6 +9,8 @@ from plotly.subplots import make_subplots
 import calendar
 import datetime as dt
 from sklearn.linear_model import LinearRegression
+import altair as alt
+from vega_datasets import data
 
 # Setting the title
 st.title('COVID-19 Out of the box viewpoints')
@@ -17,6 +19,93 @@ image = Image.open('Data/out-of-the-box.jpg')
 st.image(image, caption='COVID-19 Out of the box viewpoints')
  
 ########################################## LOADING DATA #################################################
+
+@st.cache()
+def getDatasets():
+    df_with_country_name = pd.read_csv("Data/pollutionData.csv", encoding = "UTF-8")
+
+    data_species_list = df_with_country_name['Specie'].unique()
+
+    datasets = {}
+    for specie in data_species_list:
+        datasets[specie] = df_with_country_name[df_with_country_name['Specie'] == specie]
+    
+    return datasets
+
+@st.cache()
+def getCountryCodes():
+    df_with_country_code = pd.read_csv("Data/wikipedia-iso-country-codes.csv", encoding = "UTF-8")
+    return df_with_country_code
+
+@st.cache()
+def getGeographyData(locationData, specieFilter):
+    locationData = locationData.pivot_table(index = "Date", columns = 'Country Code', values = 'Value').reset_index().astype({"Date": "datetime64"}).set_index('Date')
+    locationData = expSmooth(locationData).reset_index()
+    dates_data = locationData
+    dates_data = dates_data.melt(id_vars='Date', var_name='Country',
+                value_name=specieFilter)
+
+    country_codes = getCountryCodes()
+    dates_data = dates_data.merge(country_codes, left_on='Country', right_on='Alpha-2 code')[["Date", "Numeric code", "English short name lower case", f"{specieFilter}"]].rename(
+        columns = {
+            "English short name lower case" : "Country",
+            "Numeric code": "id"
+        }
+    )
+    return dates_data
+
+def plotCloropleth(dates_data, specieFilter, date, background):
+    dates_data = dates_data[dates_data['Date'] == date]
+
+    source = alt.topo_feature(data.world_110m.url, "countries")
+    date_str = date.strftime("%d %B %Y")
+    
+
+    foreground = (
+        alt.Chart(source, title=f"Geographic distribution of {specieFilter} in PPM as of {date_str}")
+        .mark_geoshape(stroke="black", strokeWidth=0.15)
+        .encode(
+            color=alt.Color(
+                f"{specieFilter}:Q", scale=alt.Scale(scheme="yelloworangered"),
+            ),
+            tooltip=[
+                alt.Tooltip("Country:N", title="Country"),
+                alt.Tooltip(f"{specieFilter}:Q", title=f"{specieFilter} in PPM"),
+            ],
+        )
+        .transform_lookup(
+            lookup="id",
+            from_=alt.LookupData(dates_data, "id", [f"{specieFilter}", "Country"]),
+        )
+    )
+
+    final_map = (
+        (background + foreground)
+        .configure_view(strokeWidth=0)
+        .properties(width=700, height=400)
+        .project("naturalEarth1")
+    )
+
+    return final_map
+
+def reportTrends(locationData, regionCriteria):
+    st.subheader("Pre-covid vs covid times")
+    data_cols = list(locationData.columns)
+    num_cols = len(data_cols)
+    cols = st.columns(num_cols)
+    locationData = locationData.reset_index()
+
+    covid_clock = datetime(2020, 1, 1)
+
+    for i in range(num_cols):
+        location = data_cols[i]
+        pre_covid_mean = locationData[locationData['Date'] < covid_clock][location].mean()
+        post_covid_mean = locationData[locationData['Date'] >= covid_clock][location].mean()
+        percentage_change = 100 * (post_covid_mean - pre_covid_mean)/pre_covid_mean
+        cols[i].metric(f"{location} (in PPM)", f"{post_covid_mean.round(2)}", f"{percentage_change.round(2)}%")
+
+def expSmooth(series, alpha = 0.02):
+    return series.ewm(alpha=alpha, ignore_na = True).mean()
 
 @st.cache
 def load_data():
@@ -446,6 +535,74 @@ st.header('Climate Data')
 
 image_climate = Image.open('Data/climate.jpg')
 st.image(image_climate, width = 400)
+
+with st.spinner('Bringing you awesome...'):
+    datasets = getDatasets()
+
+species_of_interest = ['PM10', 'SO2','PM25', 'NO2', 'CO']
+
+st.title('Pollution trends')
+
+specieFilter = st.selectbox('Type of Pollutant', species_of_interest)
+if specieFilter is None:
+    specieFilter = 'PM25'
+datasetOfInterest = datasets[specieFilter]
+
+st.header('Time Series trends')
+
+countries_list = datasetOfInterest['Country'].unique()
+cities_list = datasetOfInterest['City'].unique()
+
+cityOrCountryFilter = st.selectbox('Filter Criteria: City or Country',['City', 'Country'])
+if cityOrCountryFilter is None:
+    cityOrCountryFilter = 'City'
+
+listOfPlaces = cities_list if cityOrCountryFilter == 'City' else countries_list
+
+placeFilter = st.multiselect('Location filter - Choose the locations for which you want to see the trends', listOfPlaces)
+
+plural = ''
+if cityOrCountryFilter == 'Country':
+    plural = 'countries'
+elif cityOrCountryFilter == 'City':
+    plural = 'cities'
+
+globalAggregate = datasetOfInterest[['Date','Value']].groupby('Date').aggregate('median').reset_index().astype({"Date": "datetime64"}).set_index('Date')
+globalAggregate['Value'] = expSmooth(globalAggregate['Value'])
+globalAggregate.rename(columns={'Value': 'Global Average'}, inplace=True)
+
+displayData = globalAggregate
+
+if placeFilter and len(placeFilter)<5:
+    locationData = datasetOfInterest[datasetOfInterest[cityOrCountryFilter].isin(placeFilter)][['Date', 'Value', cityOrCountryFilter]]
+    locationData = locationData.pivot_table(index = "Date", columns = cityOrCountryFilter, values = 'Value').reset_index().astype({"Date": "datetime64"}).set_index('Date')
+    locationData = expSmooth(locationData)
+    displayData = globalAggregate.merge(locationData, on='Date')
+elif len(placeFilter)>=5:
+    st.warning(f"Select any number of {plural} between 1 and 4. There are {len(placeFilter)} places that are currently selected.")
+
+st.line_chart(displayData)
+
+reportTrends(displayData, cityOrCountryFilter)
+
+st.header('Geographic trends')
+
+world = data.world_110m.url
+
+locationData = datasetOfInterest[['Date', 'Value', 'Country Code']]
+dates_data = getGeographyData(locationData, specieFilter)
+
+source = alt.topo_feature(data.world_110m.url, "countries")
+background = alt.Chart(source).mark_geoshape(fill="white")
+
+date_range = pd.date_range(start="2019-01-01",end="2021-11-20").to_pydatetime().tolist()
+for i in range(len(date_range)):
+    date_range[i] = date_range[i].date()
+
+date = st.select_slider("Pick a date", options = date_range)
+date = datetime(date.year, date.month, date.day)
+final_map = plotCloropleth(dates_data, specieFilter, date, background)
+plot = st.altair_chart(final_map)
 
 ########################################## CONCLUSION #################################################
 st.subheader("""
