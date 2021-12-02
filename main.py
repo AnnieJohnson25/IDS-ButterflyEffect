@@ -146,6 +146,33 @@ st.title('About')
 
 st.header('Problem Statement')
 
+st.subheader('The butterfly effect')
+
+st.write("""
+With the advances in science in recent times, it feels like we are advancing towards a society where we have enough resources to predict everything that can happen and maybe also explain how and why of it. For example, we can make accurate hourly weather forecasts up to a few days in the future. Feats like this were not even dreamt of a few centuries ago. This success is also seen in looking into the past. Science enables us to solve uncountable mysteries of the past on a daily basis (yet many more seem to pop up every day). 
+
+Given all this, it is possible to think of the future as deterministic and as something we just have to wait for to manifest itself. But here is the catch - every system is deterministic only if you know the current state of the system to infinite precision. This is called sensitive dependence on initial conditions, i.e, any slight difference in the current state could lead us to a completely different future. Why is this the case? This is a characteristic of a chaotic system. The classic examples of a chaotic system are: two-body pendulum and water flow in a pipe. But these are not the only chaotic systems. The more and more we study different systems, we realize that most of the worldly systems are chaotic. Even the earth going around the sun is a chaotic system.
+
+What does it mean to be in a chaotic system? We can never predict anything beyond a small time frame in the future to a decent precision. Take the example of the weather forecast systems. The reason the forecasts are limited to a week in the future is because any prediction we might make beyond that would be just bad. Weather being chaotic in nature, a butterfly’s flapping in Mexico could cause a Hurricane in Florida. Anything could effect anything.
+
+This brings us to the question: Then, how do we determine the chain of causality in a system? The simple answer is: we can’t. All we can do is use domain knowledge and data to give most probable reasons for an event. One might argue that causality could be determined in a Randomized Controlled Test. This is not possible as we would require infinite trails, perfect data (in terms of precision), and zero errors to make any claims of perfect determinism (This is the reason we report significance of our results in an RCT).
+""")
+
+st.subheader('Illustration of a Chaotic System')
+
+st.write("""
+The world we live in today is a perfectly relatable example of a chaotic system. For even the biggest of events happening in the society, we cannot determine what its repercussions would be. Note that we are flipping the perspective from “What caused this event?” to “What will this event cause?”. 
+
+Let us pick the biggest event that happened in the recent years: Outbreak of the Covid-19 virus. Specifically, we want to look at its correlations with Air Travel, Game Streaming, Air Pollution, Suicide rates. We have put them in the decreasing order of our ability to think of a chain of causality for it.
+""")
+
+st.subheader('Inspiration')
+st.write("""
+Our experiment and explanation were inspired from a Youtube video by Veritasium - Chaos: The Science of the Butterfly Effect - YouTube.
+""")
+
+st.video('https://youtu.be/fDek6cYijxI')
+
 st.write("""
 This project focuses on comparing some overlooked parameters and metrics that changed for good during the pandemic. This project specifically focuses on
 """)
@@ -413,6 +440,10 @@ fig.update_layout(legend=dict(
 
 st.write(fig)
 
+st.write("""
+From the streaming data, we can see that game streaming has increased significantly since 2020. We immediately relate this to people being indoors more often since the outbreak. But then, we think of other causes too - what about increase in unemployment?, or just that this Amazon subsidiary started to market itself aggressively due to its competition from Microsoft. The chain of causality is getting a little difficult to come up with.
+""")
+
 ########################################## SUICIDE DATA #################################################
 
 st.header('Suicide Data')
@@ -464,6 +495,10 @@ fig = px.bar(suicide_melt_df, x='variable', y='value', color='Date', barmode='gr
 st.write(fig)
 
 st.write('Looks like that the Suicide rate in most categories have reduced during the pandemic. Yet another good trend during the sad COVID time!!.')
+
+st.write("""
+This case shows how suicide rates have gone down since covid has started. If you start to reason about its relation and causal chaining with covid, there are multiple mindboggling factors that you could talk about for hours and still arrive on no conclusions. Most people would stop trying to analyze the causality and just say that is coincidental.
+""")
 
 ########################################## FLIGHTS DATA #################################################
 
@@ -542,6 +577,10 @@ fig3.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 90 #sw
 
 st.plotly_chart(fig3)
 
+st.write("""
+The data clearly shows that Air traffic has reduced significantly after the covid outbreak. The data merely shows a correlation between these two events. After observing the correlation, it is the observer who forms a chain of causality in the mind that because of the worldwide travel restrictions that are caused by covid, there is a reduced air travel. Yes, this seems to be right. But that is not what the data tells us. We are the ones who performed this inference.
+""")
+
 ########################################## CLIMATE DATA #################################################
 
 st.header('Climate Data')
@@ -617,9 +656,15 @@ date = datetime(date.year, date.month, date.day)
 final_map = plotCloropleth(dates_data, specieFilter, date, background)
 plot = st.altair_chart(final_map)
 
+st.write("""
+For many pollutants, we see a global decline in the concentration in the atmosphere after the outbreak. This trend can be seen in many countries and cities as well. This can be attributed to many factories being shut down lately because of the pandemic. But this is not the only cause we can think of. Governments across the world are taking initiatives to reduce global warming. People are becoming more aware of the pollution caused by the meat industry and are opting to be vegan. Any of this (or all of them) can cause this betterment of the environment. At this point in our illustration, the causal chains formed in our head are becoming longer and harder to keep track of.
+""")
+
 ########################################## CONCLUSION #################################################
 st.subheader("Seems like there were quite a few good things that happened during the pandemic which were overlooked.")
-st.subheader("Good that we were able to catch a few of them here!!")
+st.write("""
+Going by the illustrations, we can see that as it gets difficult to form causal explanations in our head, our explanations for the correlation goes from ‘This is why this happened’ to ‘I think it is just a coincidence’. In reality, both are not completely true. We cannot infer causality, but neither can we say that something is coincidental (as everything effects everything). So, when next time someone asks you a question about causality or coincidence of two events, you reply - “It is just chaos!”
+""")
 
 ########################################## DATASET #################################################
 
