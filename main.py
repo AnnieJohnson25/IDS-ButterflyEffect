@@ -22,7 +22,11 @@ st.image(image, caption='COVID-19 Out of the box viewpoints')
 
 @st.cache()
 def getDatasets():
-    df_with_country_name = pd.read_csv("Data/pollutionData.csv", encoding = "UTF-8")
+    df2019 = pd.read_csv("Data/pollutionData2019.csv", encoding = "UTF-8")
+    df2020 = pd.read_csv("Data/pollutionData2020.csv", encoding = "UTF-8")
+    df2021 = pd.read_csv("Data/pollutionData2021.csv", encoding = "UTF-8")
+
+    df_with_country_name = pd.concat([df2019, df2020, df2021])
 
     data_species_list = df_with_country_name['Specie'].unique()
 
@@ -605,10 +609,8 @@ final_map = plotCloropleth(dates_data, specieFilter, date, background)
 plot = st.altair_chart(final_map)
 
 ########################################## CONCLUSION #################################################
-st.subheader("""
-Seems like there were quite a few good things that happened during the pandemic which were overlooked.
-Good that we were able to catch a few of them here!!
-""")
+st.subheader("Seems like there were quite a few good things that happened during the pandemic which were overlooked.")
+st.subheader("Good that we were able to catch a few of them here!!")
 
 ########################################## DATASET #################################################
 
