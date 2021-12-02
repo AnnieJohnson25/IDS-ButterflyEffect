@@ -2,9 +2,13 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from PIL import Image
 from datetime import datetime
 from plotly.subplots import make_subplots
+import calendar
+import datetime as dt
+from sklearn.linear_model import LinearRegression
 
 # Setting the title
 st.title('COVID-19 Out of the box viewpoints')
@@ -165,6 +169,147 @@ st.header('Gaming Data')
 image_gaming = Image.open('Data/gaming.jpg')
 st.image(image_gaming, width = 400)
 
+# Reading the data
+twitch_df=pd.read_csv('Data/Twitch_global_data.csv')
+covid_df=pd.read_csv('Data/covid_global.csv')
+
+#########################   Visualization Number 1 ########################
+
+st.subheader('Comparing the number of hours globally spent on watching twitch streams every month from 2016 to 2021 September')
+
+# Concatenating year and month columns into month-year column
+twitch_df["month-year"]=twitch_df["Month"].astype(str)+"-"+twitch_df["year"].astype(str)
+# Converting the string month-year to datetime
+twitch_df["month-year"]=pd.to_datetime(twitch_df["month-year"])
+# Finding number of millions of hours watched and storing this data in column Hours_watched_millions
+twitch_df["Hours_watched_millions"]=twitch_df["Hours_watched"]/1000000
+# Plotting the Hours_watched_millions data Vs month-year
+
+# Creating month, year and full_month columns in the twitch_df dataframe
+twitch_df['month'] = pd.DatetimeIndex(twitch_df['month-year']).month
+twitch_df['year'] = pd.DatetimeIndex(twitch_df['month-year']).year
+twitch_df['full_month'] = twitch_df['month'].apply(lambda x: calendar.month_abbr[x])
+
+# Making an animated bar plot depicting the number of hours of watched in millions Vs each month from 2016-2021 September
+fig = px.bar(twitch_df, x="full_month", y="Hours_watched_millions", color="month",
+  animation_frame="year", animation_group="full_month", range_y=[0,3000])
+
+st.write(fig)
+
+
+#########################   Visualization Number 2 ########################
+
+st.subheader('Comparing the rise in COVID-19 active cases along with the average and peak number of twitch stream viewers from 2016')
+
+# Finding average viewers in thousands and storing this data in Avg_viewers_thousands
+twitch_df["Avg_viewers_thousands"]=twitch_df["Avg_viewers"]/1000
+# Finding number of peak viewers in thousands and storing this data in column Peak_viewers_thousands
+twitch_df["Peak_viewers_thousands"]=twitch_df["Peak_viewers"]/1000
+# Calculating streams in millions and storing in streams_millions
+twitch_df["Streams_millions"]=twitch_df["Streams"]/1000000
+# Storing dates in datetime format in column date
+twitch_df["date"]=pd.to_datetime(twitch_df["month-year"])
+twitch_df["month-year"]=pd.to_datetime(twitch_df["month-year"]).dt.to_period('m')
+
+# Preprocessing the covid_df data
+covid_df["date"]=pd.to_datetime(covid_df["date"],format="%d/%m/%y")
+covid_df["month-year"]=covid_df["date"].dt.to_period('m')
+covid_df=covid_df.drop_duplicates(subset=['month-year'], keep='first')
+
+# Performing left join on twitch_df and covid_df to get all the rows having only dates mentioned in twitch_df
+df=twitch_df.merge(covid_df, how='left', on=['month-year'])
+
+# Create plot
+
+fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+fig.add_trace(
+    go.Scatter(x=list(df["date_x"]), y=list(df.Avg_viewers_thousands), name="Average number of viewers in thousands"))
+
+fig.add_trace(
+    go.Scatter(x=list(df["date_x"]), y=list(df.Peak_viewers_thousands), name="Peak number of viewers in thousands"))
+
+fig.add_trace(
+    go.Scatter(x=list(df["date_y"]), y=list(df["active_cases"]), name="Active cases per day"), secondary_y=True)
+
+# Labelling both axis
+fig.layout.xaxis.title="Year"
+
+fig.layout.yaxis.title="Viewers in thousands"
+
+fig.update_yaxes(title_text="Number of active cases", secondary_y=True)
+
+fig.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.15,
+    xanchor="right",
+    x=1
+))
+
+# Add range slider
+fig.update_layout(
+    xaxis=dict(
+        rangeselector=dict(
+            buttons=list([
+                dict(count=1,
+                     label="1m",
+                     step="month",
+                     stepmode="backward"),
+                dict(count=6,
+                     label="6m",
+                     step="month",
+                     stepmode="backward"),
+                dict(count=1,
+                     label="YTD",
+                     step="year",
+                     stepmode="todate"),
+                dict(count=1,
+                     label="1y",
+                     step="year",
+                     stepmode="backward"),
+                dict(step="all")
+            ])
+        ),
+        rangeslider=dict(
+            visible=True
+        ),
+        type="date"
+    )
+)
+
+st.write(fig)
+
+#########################   Visualization Number 3 ########################
+
+st.subheader('Comparing the number of streams in millions alongside the number of COVID-19 active cases from 2016')
+
+# Making the plot
+
+fig = make_subplots(specs=[[{"secondary_y": True}]])
+ 
+fig.add_trace(
+    go.Scatter(x=list(df["date_x"]), y=list(twitch_df.Streams_millions), name="Streams per month in millions"))
+
+fig.add_trace(
+    go.Scatter(x=list(df["date_y"]), y=list(df["active_cases"]), name="Active cases per day"), secondary_y=True,)
+
+
+fig.layout.xaxis.title="Year"
+
+fig.layout.yaxis.title="Number of streams in millions"
+
+fig.update_yaxes(title_text="Number of active cases", secondary_y=True)
+
+fig.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.01,
+    xanchor="right",
+    x=1
+))
+
+st.write(fig)
 
 ########################################## SUICIDE DATA #################################################
 
@@ -351,6 +496,56 @@ st.header('Maintaining 4 C\'s')
 ########################################## ADVANCED ML #################################################
 
 st.title('Advanced Machine Learning')
+
+st.subheader("What if COVID never happened? Would the trend be any different? Let's find that using Multivariate Polynomial Regression")
+st.subheader('The number of twitch stream watch hours predicted Vs the actual number of hours spent watching twitch during the COVID-19 pandemic')
+
+# Preprocessing
+date_object = dt.date(2020,1,1)
+df["timestamp"]=df["date_x"].apply(lambda x: x.value)
+df3 = df[df["date_x"].dt.date<date_object]
+df3["timestamp"]=df3["date_x"].apply(lambda x: x.value)
+df4 = df[df["date_x"].dt.date>=date_object]
+df4["timestamp"]=df4["date_x"].apply(lambda x: x.value)
+X = df3[["timestamp"]]
+y = df3.loc[:, 'Hours_watched']  # create the target
+
+# Fitting linear regresion model on timestamp data
+model = LinearRegression()
+model.fit(X, y)
+
+# Test data
+x_test=df4[["timestamp"]]
+y_pred = model.predict(x_test)
+y_test = df["Hours_watched_millions"].tolist()
+
+plot_y=pd.concat([df3["Hours_watched_millions"],pd.Series(y_pred/1000000)])
+
+print(plot_y)
+
+# Plotting predicted Vs actual watch hours during the pandemic
+fig = go.Figure()
+
+fig.add_trace(
+    go.Scatter(x=df["date_x"].tolist(), y=plot_y.tolist(), name="Forecasted hours watched in millions", opacity=0.5))
+
+fig.add_trace(
+    go.Scatter(x=df["date_x"].tolist(), y=y_test, name="Actual hours watched in millions", opacity=0.5))
+
+# Labelling the axis
+fig.layout.xaxis.title="Year"
+
+fig.layout.yaxis.title="Hours watched in millions"
+
+fig.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.01,
+    xanchor="right",
+    x=1
+))
+
+st.write(fig)
 
 ########################################## EDA #################################################
 
