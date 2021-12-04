@@ -11,6 +11,9 @@ import datetime as dt
 from sklearn.linear_model import LinearRegression
 import altair as alt
 from vega_datasets import data
+import numpy as np
+from statsmodels.tsa.arima.model import ARIMA
+from dateutil.relativedelta import relativedelta
 
 # Setting the title
 st.title('COVID-19 Out of the box viewpoints')
@@ -57,6 +60,73 @@ def getGeographyData(locationData, specieFilter):
         }
     )
     return dates_data
+
+def difference(dataset, interval=1):
+	diff = list()
+	for i in range(interval, len(dataset)):
+		value = dataset[i] - dataset[i - interval]
+		diff.append(value)
+	return np.array(diff)
+
+# invert differenced value
+def inverse_difference(history, yhat, interval=1):
+	return yhat + history[-interval]
+
+def getForecast(dataset, specie, cityOrCountryFilter, location, date):
+    locationData = dataset[dataset[cityOrCountryFilter] == location][['Date', 'Value']]
+    locationData = locationData.groupby(['Date']).aggregate('mean').reset_index()
+    smoothValues = expSmooth(locationData['Value'])
+    values = smoothValues.values
+    dates = locationData['Date'].values
+    initial_dates = [datetime.strptime(x, "%Y-%m-%d") for x in dates]
+    data_end_date = initial_dates[-1]
+
+    days_in_year = 365
+    differenced = difference(values, days_in_year)
+
+    # fit model
+    model = ARIMA(differenced)
+    model_fit = model.fit()
+
+    steps = abs(date - data_end_date).days
+
+    forecast = model_fit.forecast(steps=steps)
+
+    history = [x for x in values]
+
+    for yhat in forecast:
+        inverted = inverse_difference(history, yhat, days_in_year)
+        history.append(inverted)
+    
+    date_range = pd.date_range(start=data_end_date + relativedelta(days=1),end=date).to_pydatetime().tolist()
+
+    # train global data
+    globalData = dataset[['Date', 'Value']]
+    globalData = globalData.groupby(['Date']).aggregate('mean').reset_index()
+    globalSmoothValues = expSmooth(globalData['Value'])
+    globalValues = globalSmoothValues.values
+    
+    global_differences = difference(globalValues, days_in_year)
+    # fit model
+    global_model = ARIMA(global_differences)
+    global_model_fit = model.fit()
+
+    global_forecast = global_model_fit.forecast(steps=steps)
+    global_history = [x for x in globalValues]
+
+    for yhat in global_forecast:
+        inverted = inverse_difference(global_history, yhat, days_in_year)
+        global_history.append(inverted)
+
+    chart = pd.DataFrame({'Date': list(date_range), f'{location}': history[-len(date_range):], f'Global Average': global_history[-len(date_range):]}).set_index('Date')
+    st.subheader(f'Forecast for {specie} for one year (in PPM)')
+
+    last_forecast = history[-1]
+    locationData['Date'] = pd.to_datetime(locationData['Date'])
+
+    #st.metric(f"{specie} (in PPM)", f"{last_forecast.round(2)}")
+
+    st.line_chart(chart)
 
 def plotCloropleth(dates_data, specieFilter, date, background):
     dates_data = dates_data[dates_data['Date'] == date]
@@ -713,6 +783,9 @@ st.title('Advanced Machine Learning')
 st.subheader("What if COVID never happened? Would the trend be any different? Let's find that using Multivariate Polynomial Regression")
 st.subheader('The number of twitch stream watch hours predicted Vs the actual number of hours spent watching twitch during the COVID-19 pandemic')
 
+
+####### GAMING DATA ########
+
 # Preprocessing
 date_object = dt.date(2020,1,1)
 df["timestamp"]=df["date_x"].apply(lambda x: x.value)
@@ -759,6 +832,62 @@ fig.update_layout(legend=dict(
 ))
 
 st.write(fig)
+
+####### CLIMATE DATA ########
+
+with st.spinner('Bringing you awesome...'):
+    datasets = getDatasets()
+
+species_of_interest = ['PM10', 'SO2','PM25', 'NO2', 'CO']
+
+st.title('Pollution Forecast')
+
+st.write('We use ARIMA (Autoregressive Integrated Moving Average) model from Statsmodels package to forecast the trends in the pollutants. The seasonal changes in the pollutants are corrected for assuming a cycle of one year.')
+st.markdown("[Statsmodels ARIMA documentation](https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima.model.ARIMA.html#statsmodels.tsa.arima.model.ARIMA)")
+
+st.subheader('Select the location for which you want the forecast')
+
+
+countries = set()
+cities = set()
+
+for specie in species_of_interest:
+    countries_ = set(datasets[specie]['Country'].unique())
+    cities_ = set(datasets[specie]['City'].unique())
+
+    if len(countries) == 0:
+        countries = countries.union(countries_)
+    else:
+        countries = countries.intersection(countries_)
+    
+    if len(cities) == 0:
+        cities = cities.union(cities_)
+    else:
+        cities = cities.intersection(cities_)
+
+cities = list(cities)
+countries = list(countries)
+
+cityOrCountryFilter = st.selectbox('Filter Criteria: City/Country',['Country', 'City'])
+if cityOrCountryFilter is None:
+    cityOrCountryFilter = 'Country'
+
+listOfPlaces = cities if cityOrCountryFilter == 'City' else countries
+
+location = st.selectbox('Location name', listOfPlaces)
+
+# date_range = pd.date_range(start="2021-12-01",end="2022-11-30").to_pydatetime().tolist()
+# for i in range(len(date_range)):
+#     date_range[i] = date_range[i].date()
+
+# date = st.select_slider("Pick a date", options = date_range)
+# date = datetime(date.year, date.month, date.day)
+
+date = datetime(2022, 11, 20)
+
+specie = st.selectbox("Pick the Pollutant", species_of_interest)
+
+getForecast(datasets[specie], specie, cityOrCountryFilter, location, date)
 
 ########################################## EDA #################################################
 
