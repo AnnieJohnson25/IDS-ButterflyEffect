@@ -54,12 +54,59 @@ def getDatasets():
     
     return datasets
 
-@st.cache()
+@st.cache
 def getCountryCodes():
     df_with_country_code = pd.read_csv("Data/wikipedia-iso-country-codes.csv", encoding = "UTF-8")
     return df_with_country_code
 
-@st.cache()
+@st.cache
+def get_country_covid():
+    country_df = pd.read_csv("Data/covid_country_wise.csv")
+    country_df['date'] = pd.to_datetime(country_df['date'], format='%d/%m/%y').dt.date
+    return country_df
+
+@st.cache
+def get_twitch_data():
+    twitch_df=pd.read_csv('Data/Twitch_global_data.csv')
+    # Concatenating year and month columns into month-year column
+    twitch_df["month-year"]=twitch_df["Month"].astype(str)+"-"+twitch_df["year"].astype(str)
+    # Converting the string month-year to datetime
+    twitch_df["month-year"]=pd.to_datetime(twitch_df["month-year"])
+    # Finding number of millions of hours watched and storing this data in column Hours_watched_millions
+    twitch_df["Hours_watched_millions"]=twitch_df["Hours_watched"]/1000000
+    # Plotting the Hours_watched_millions data Vs month-year
+
+    # Creating month, year and full_month columns in the twitch_df dataframe
+    twitch_df['month'] = pd.DatetimeIndex(twitch_df['month-year']).month
+    twitch_df['year'] = pd.DatetimeIndex(twitch_df['month-year']).year
+    twitch_df['full_month'] = twitch_df['month'].apply(lambda x: calendar.month_abbr[x])
+
+    # Finding average viewers in thousands and storing this data in Avg_viewers_thousands
+    twitch_df["Avg_viewers_thousands"]=twitch_df["Avg_viewers"]/1000
+    # Finding number of peak viewers in thousands and storing this data in column Peak_viewers_thousands
+    twitch_df["Peak_viewers_thousands"]=twitch_df["Peak_viewers"]/1000
+    # Calculating streams in millions and storing in streams_millions
+    twitch_df["Streams_millions"]=twitch_df["Streams"]/1000000
+    # Storing dates in datetime format in column date
+    twitch_df["date"]=pd.to_datetime(twitch_df["month-year"])
+    twitch_df["month-year"]=pd.to_datetime(twitch_df["month-year"]).dt.to_period('m')
+    return twitch_df
+
+@st.cache
+def get_covid_global_data():
+    covid_df=pd.read_csv('Data/covid_global.csv')
+    # Preprocessing the covid_df data
+    covid_df["date"]=pd.to_datetime(covid_df["date"],format="%d/%m/%y")
+    covid_df["month-year"]=covid_df["date"].dt.to_period('m')
+    covid_df=covid_df.drop_duplicates(subset=['month-year'], keep='first')
+    return covid_df
+
+@st.cache
+def get_suicide_data():
+    suicide_df = pd.read_csv("Data/suicide_cleaned.csv")
+    return suicide_df
+
+@st.cache
 def getGeographyData(locationData, specieFilter):
     locationData = locationData.pivot_table(index = "Date", columns = 'Country Code', values = 'Value').reset_index().astype({"Date": "datetime64"}).set_index('Date')
     locationData = expSmooth(locationData).reset_index()
@@ -278,7 +325,7 @@ st.write("""
 """)
 
 st.header('Demo')
-st.video('https://youtu.be/fDek6cYijxI')
+#st.video('https://youtu.be/fDek6cYijxI')
 
 st.title('Visualizations')
 
@@ -296,8 +343,7 @@ Let us pick the biggest event that happened in the recent years: Outbreak of the
 st.header('🦠 Interesting trends when the pandemic happened - COVID 19')
 
 # Reading the file
-country_df = pd.read_csv("Data/covid_country_wise.csv")
-country_df['date'] = pd.to_datetime(country_df['date'], format='%d/%m/%y').dt.date
+country_df = get_country_covid()
 
 # Getting only vaccination data
 vaccine_df = country_df[(country_df['percentage_vaccinated'].notna()) & (country_df['percentage_active'].notna())]
@@ -464,25 +510,12 @@ image_gaming = Image.open('Data/gaming.jpg')
 st.image(image_gaming, width = 400)
 
 # Reading the data
-twitch_df=pd.read_csv('Data/Twitch_global_data.csv')
-covid_df=pd.read_csv('Data/covid_global.csv')
+twitch_df = get_twitch_data()
+covid_df = get_covid_global_data()
 
 #########################   Visualization Number 1 ########################
 
 st.subheader('Comparing the number of hours globally spent on watching twitch streams every month from 2016 to 2021 September')
-
-# Concatenating year and month columns into month-year column
-twitch_df["month-year"]=twitch_df["Month"].astype(str)+"-"+twitch_df["year"].astype(str)
-# Converting the string month-year to datetime
-twitch_df["month-year"]=pd.to_datetime(twitch_df["month-year"])
-# Finding number of millions of hours watched and storing this data in column Hours_watched_millions
-twitch_df["Hours_watched_millions"]=twitch_df["Hours_watched"]/1000000
-# Plotting the Hours_watched_millions data Vs month-year
-
-# Creating month, year and full_month columns in the twitch_df dataframe
-twitch_df['month'] = pd.DatetimeIndex(twitch_df['month-year']).month
-twitch_df['year'] = pd.DatetimeIndex(twitch_df['month-year']).year
-twitch_df['full_month'] = twitch_df['month'].apply(lambda x: calendar.month_abbr[x])
 
 # Making an animated bar plot depicting the number of hours of watched in millions Vs each month from 2016-2021 September
 fig = px.bar(twitch_df, x="full_month", y="Hours_watched_millions", color="month",
@@ -494,21 +527,6 @@ st.write(fig)
 #########################   Visualization Number 2 ########################
 
 st.subheader('Comparing the rise in COVID-19 active cases along with the average and peak number of twitch stream viewers from 2016')
-
-# Finding average viewers in thousands and storing this data in Avg_viewers_thousands
-twitch_df["Avg_viewers_thousands"]=twitch_df["Avg_viewers"]/1000
-# Finding number of peak viewers in thousands and storing this data in column Peak_viewers_thousands
-twitch_df["Peak_viewers_thousands"]=twitch_df["Peak_viewers"]/1000
-# Calculating streams in millions and storing in streams_millions
-twitch_df["Streams_millions"]=twitch_df["Streams"]/1000000
-# Storing dates in datetime format in column date
-twitch_df["date"]=pd.to_datetime(twitch_df["month-year"])
-twitch_df["month-year"]=pd.to_datetime(twitch_df["month-year"]).dt.to_period('m')
-
-# Preprocessing the covid_df data
-covid_df["date"]=pd.to_datetime(covid_df["date"],format="%d/%m/%y")
-covid_df["month-year"]=covid_df["date"].dt.to_period('m')
-covid_df=covid_df.drop_duplicates(subset=['month-year'], keep='first')
 
 # Performing left join on twitch_df and covid_df to get all the rows having only dates mentioned in twitch_df
 df=twitch_df.merge(covid_df, how='left', on=['month-year'])
@@ -699,7 +717,7 @@ st.image(image_suicide, width = 400)
 st.subheader('😞 US Suicide counts trend for years 2017 - 2020')
 
 # Reading the suicide df
-suicide_df = pd.read_csv("Data/suicide_cleaned.csv")
+suicide_df = get_suicide_data()
 
 # Multi-select to choose the categories to plot
 st.write('Category wise suicide rate per 100K pop alongside COVID numbers')
