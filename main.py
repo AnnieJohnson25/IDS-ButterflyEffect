@@ -776,6 +776,29 @@ st.write("""
 
 st.header('Maintaining 4 C\'s')
 
+st.subheader('Completeness')
+st.write("""
+The considered data is an aggregation of 8 datasets collected from 3 different  sources. Each dataset had multiple empty and junk columns and rows. All the junk and duplicate rows and columns are all removed. Missing values in the original dataset are found out via interpolation. After this simple cleaning, the data was pretty complete.
+
+Different countries had COVID starting on different dates. So  the countries that witnessed later than others, had empty values in the earlier dates. As a part of the preprocessing, we filled 0 because the active case count in those countries were 0 at that time.
+The first two plots in the website show a delay in the animation for a few countries because of this reason. The animation of a few countries is slow and late because they had no COVID count at that time.
+""")
+
+st.subheader('Coherency')
+st.write("""
+The datasets we considered weren’t coherent. COVID data was only from 2020 to current date whereas other datasets like gaming, climate, flights and suicide had data starting from different times ranging from 2016 to 2019. To make all the data coherent, we had to extrapolate a few columns and fill those columns with 0. Filling the columns with 0 made sense because COVID wasn’t existing from 2019 to late 2019. Most of the analysis and visualization focuses on the data from 2020 to current data because only in that time range the data is coherent and some meaningful trends were observable.
+""")
+
+st.subheader('Correctness')
+st.write("""
+We verified the correctness of the data used during Exploratory Data Analysis through outlier detection, random sampling and visualizations. Records from Gaming, Flights and Suicide dataset was correct. However, some data records in the Pollution dataset had off-scale values for sensor data like PM25. This could probably be due to faulty sensors used to measure the values. We corrected this value by smoothing the data in the graph using  exponential smoothing. Another issue was found in COVID dataset where some remote countries, for instance, Saint Helena, reported COVID countries that were greater than its population. These records were explicitly dropped after EDA as a part of outlier detection and removal. 
+""")
+
+st.subheader('Accountability')
+st.write("""
+The sources for datasets used for this project are Kaggle, Air Quality Open Data Platform, National Center for Health Statistics and DataHub.io. All these are credible information sources.
+""")
+
 ########################################## ADVANCED ML #################################################
 
 st.title('Advanced Machine Learning')
