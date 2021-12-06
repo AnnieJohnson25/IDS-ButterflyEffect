@@ -14,12 +14,27 @@ from vega_datasets import data
 import numpy as np
 from statsmodels.tsa.arima.model import ARIMA
 from dateutil.relativedelta import relativedelta
+import base64
 
 # Setting the title
-st.title('COVID-19 Out of the box viewpoints')
+title = "The Butterfly Effect"
+title2 = "Correlation or Causation?: It's Chaos!"
+st.markdown(f"<h1 style='text-align: center; color: white;'>{title}</h1><h2 style='text-align: center; color: white;'>{title2}</h2>", unsafe_allow_html=True)
+# st.title("""The Butterfly Effect - Correlation or Causation?: It is just Chaos!
+# """)
 
-image = Image.open('Data/out-of-the-box.jpg')
-st.image(image, caption='COVID-19 Out of the box viewpoints')
+# image = Image.open('Data/out-of-the-box.jpg')
+# st.image(image, caption='COVID-19 Out of the box viewpoints')
+
+file_ = open("Data/butterfly_effect_plain.gif", "rb")
+contents = file_.read()
+data_url = base64.b64encode(contents).decode("utf-8")
+file_.close()
+
+st.markdown(
+    f'<img src="data:image/gif;base64,{data_url}" alt="butterfly effect">',
+    unsafe_allow_html=True,
+)
  
 ########################################## LOADING DATA #################################################
 
@@ -216,6 +231,12 @@ st.title('About')
 
 st.header('Problem Statement')
 
+st.subheader('What we are trying to do?')
+
+st.write("""
+Illustrate the Butterfly Effect using the example of effect of the covid pandemic on air traffic, game streaming, air pollution, and suicide rates.
+""")
+
 st.subheader('The butterfly effect')
 
 st.write("""
@@ -226,14 +247,6 @@ Given all this, it is possible to think of the future as deterministic and as so
 What does it mean to be in a chaotic system? We can never predict anything beyond a small time frame in the future to a decent precision. Take the example of the weather forecast systems. The reason the forecasts are limited to a week in the future is because any prediction we might make beyond that would be just bad. Weather being chaotic in nature, a butterfly’s flapping in Mexico could cause a Hurricane in Florida. Anything could effect anything.
 
 This brings us to the question: Then, how do we determine the chain of causality in a system? The simple answer is: we can’t. All we can do is use domain knowledge and data to give most probable reasons for an event. One might argue that causality could be determined in a Randomized Controlled Test. This is not possible as we would require infinite trails, perfect data (in terms of precision), and zero errors to make any claims of perfect determinism (This is the reason we report significance of our results in an RCT).
-""")
-
-st.subheader('Illustration of a Chaotic System')
-
-st.write("""
-The world we live in today is a perfectly relatable example of a chaotic system. For even the biggest of events happening in the society, we cannot determine what its repercussions would be. Note that we are flipping the perspective from “What caused this event?” to “What will this event cause?”. 
-
-Let us pick the biggest event that happened in the recent years: Outbreak of the Covid-19 virus. Specifically, we want to look at its correlations with Air Travel, Game Streaming, Air Pollution, Suicide rates. We have put them in the decreasing order of our ability to think of a chain of causality for it.
 """)
 
 st.subheader('Inspiration')
@@ -271,15 +284,23 @@ st.write("""
 #### 1. Abhishree Shetty
 #### 2. Sundar Anand
 #### 3. Annie Johnson
-#### 4. Jayant
+#### 4. Jayant Sravan Tamarapalli
 """)
 
 st.title('Visualizations')
 
+st.header('Illustration of a Chaotic System')
+
+st.write("""
+The world we live in today is a perfectly relatable example of a chaotic system. For even the biggest of events happening in the society, we cannot determine what its repercussions would be. Note that we are flipping the perspective from “What caused this event?” to “What will this event cause?”. 
+
+Let us pick the biggest event that happened in the recent years: Outbreak of the Covid-19 virus. Specifically, we want to look at its correlations with Air Travel, Game Streaming, Air Pollution, Suicide rates. We have put them in the decreasing order of our ability to think of a chain of causality for it.
+""")
+
 ########################################## COVID DATA #################################################
 
 # Introduction
-st.header('Interesting trends when the pandemic happened - COVID 19')
+st.header('🦠 Interesting trends when the pandemic happened - COVID 19')
 
 # Reading the file
 country_df = pd.read_csv("Data/covid_country_wise.csv")
@@ -361,9 +382,90 @@ st.plotly_chart(figcovid, use_container_width=False)
 
 st.subheader('Sad times. But how did other mental and environmental things turn up? Was there any segment that got beaten up or flourished in this pandemic?')
 
+########################################## FLIGHTS DATA #################################################
+
+st.header('🛫 Flights Data')
+
+image_flights = Image.open('Data/flights.jpg')
+st.image(image_flights, width = 400)
+
+#########################   Visualization Number 1 ########################
+
+st.subheader('US Outgoing flight counts trend for years 1990 - 2020')
+#over the years, departure count
+#sheet = df_brief, columns = ['Total', 'Date']
+
+df1 = pd.DataFrame(df_brief.groupby(by=['Year'])['Total Departures Count'].sum())
+df1.reset_index(inplace=True)
+df1['Total Departures Count'] = df1['Total Departures Count']/12
+df1.loc[df1.Year == 2020,'Total Departures Count'] = df1.loc[df1.Year == 2020,'Total Departures Count'].item() * 12 / 3
+ax = px.line(df1, x="Year", y="Total Departures Count", title='Outgoing Flights Count from US from 1990 to 2020')
+st.plotly_chart(ax)
+
+#########################   Visualization Number 2 ########################
+st.subheader('Outgoing flights monthly traffic over the last 30 years up-until COVID')
+#over the years, departure count, monthly trend
+#sheet = df_brief, columns = ['Total', 'Date']
+
+df2 = df_brief.copy()
+df2 = df2.sort_values(by=['Year', 'Month #'])
+#df2 = df2.groupby(by=['Year'])['Total Departures Count', 'Month'].sum()
+df2 = df2.groupby(['Year', 'Month #', 'Month']).sum().reset_index()
+fig = px.line(df2, x='Month', y='Total Departures Count', animation_frame='Year',
+              range_y=[0,max(df2['Total Departures Count'])+10000])#, barmode='group')
+fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 20 #stay
+fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 10 #switch
+st.plotly_chart(fig)
+#make barcharts of years over the months ---
+
+#########################   Visualization Number 3 ########################
+
+st.subheader('Drill-down monthly trend chart of flight traffic for the top 15 countries')
+#country wise, count tren over months, over years
+#sheet = df_detailed
+#plt.ylabel('Departures Count')
+#plt.title("Drill-down trend chart for months from Januray to March for the top 15 countries")
+
+df3 = df_detailed.copy()
+
+
+user_n_chosen = st.selectbox(
+   "Choose the number of countries you want to analyze",
+    ('Top 5', 'Top 10', 'Top 15','Top 20'),
+    index=2)
+
+
+frame_duration = 150
+transition_duration = 90
+
+top_n = int(user_n_chosen.split()[-1]) #can be a user input
+top_n_countries = list(df3[df3['Year'] == 2019].groupby('Destination_Airport_Country', sort = True).sum()['Total Departures Count'].nlargest(top_n).index)
+
+def convert_datetime(dt):
+    return datetime.strftime(dt, '%Y-%m-%d')
+
+#index_names = df3[df3['Year'] <2019].index
+#df3.drop(index_names, inplace = True)
+df3 = df3.groupby(['Year','Month #','Date', 'Destination_Airport_Country']).sum().reset_index()
+df3 = df3[df3['Destination_Airport_Country'].isin(top_n_countries)]
+df3['Date'] = df3['Date'].apply(convert_datetime)
+fig3 = px.bar(df3,
+               x = 'Destination_Airport_Country',
+               y = 'Total Departures Count',
+               color = 'Destination_Airport_Country',
+               animation_frame='Date')
+fig3.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 150 #stay
+fig3.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 90 #switch
+
+st.plotly_chart(fig3)
+
+st.write("""
+The data clearly shows that Air traffic has reduced significantly after the covid outbreak. The data merely shows a correlation between these two events. After observing the correlation, it is the observer who forms a chain of causality in the mind that because of the worldwide travel restrictions that are caused by covid, there is a reduced air travel. Yes, this seems to be right. But that is not what the data tells us. We are the ones who performed this inference.
+""")
+
 ########################################## GAMING DATA #################################################
 
-st.header('Gaming Data')
+st.header('🎮 Gaming Data')
 
 image_gaming = Image.open('Data/gaming.jpg')
 st.image(image_gaming, width = 400)
@@ -514,146 +616,9 @@ st.write("""
 From the streaming data, we can see that game streaming has increased significantly since 2020. We immediately relate this to people being indoors more often since the outbreak. But then, we think of other causes too - what about increase in unemployment?, or just that this Amazon subsidiary started to market itself aggressively due to its competition from Microsoft. The chain of causality is getting a little difficult to come up with.
 """)
 
-########################################## SUICIDE DATA #################################################
-
-st.header('Suicide Data')
-
-image_suicide = Image.open('Data/suicide.jpeg')
-st.image(image_suicide, width = 400)
-
-### Header
-st.subheader('US Suicide counts trend for years 2017 - 2020')
-
-# Reading the suicide df
-suicide_df = pd.read_csv("Data/suicide_cleaned.csv")
-
-# Multi-select to choose the categories to plot
-st.write('Category wise suicide rate per 100K pop alongside COVID numbers')
-category = st.multiselect("Pick a categories", list(suicide_df.columns), ['Rate Age 45-54', 'Rate Sex Female', 'Rate Age 55-64'])
-
-# Melting the dataframe to plot multiple lines
-suicide_melt_df = pd.melt(suicide_df, id_vars=['Date', 'COVID count'], value_vars=category)
-suicide_melt_df = suicide_melt_df.dropna()
-
-# First plot Data vs Suicide rate
-fig1 = px.line(suicide_melt_df, x="Date", y="value", range_y=[min(suicide_melt_df['value']), max(suicide_melt_df['value'])], color='variable')
-
-# Secondary plot Data vs Covid rate
-fig2 = px.bar(suicide_df, x='Date', y='COVID count', range_y=[0, max(suicide_melt_df['COVID count'])])
-fig2.update_traces(yaxis="y2", opacity=0.6)
-
-# Making Subplots
-subfig = make_subplots(specs=[[{"secondary_y": True}]])
-
-# Naming the axes
-subfig.add_traces(fig1.data + fig2.data)
-subfig.layout.xaxis.title="Date"
-subfig.layout.xaxis.showgrid = False
-subfig.layout.yaxis.title="Suicide / 100K pop"
-subfig.layout.yaxis.showgrid = False
-subfig.layout.yaxis2.title="COVID Rate value"
-subfig.layout.yaxis2.showgrid = False
-
-# Displaying the chart
-st.write(subfig)
-
-# Comparing year wise data for the chosen categories
-st.write('Year wise suicide count for chosen categories')
-fig = px.bar(suicide_melt_df, x='variable', y='value', color='Date', barmode='group')
-
-# Displaying the chart
-st.write(fig)
-
-st.write('Looks like that the Suicide rate in most categories have reduced during the pandemic. Yet another good trend during the sad COVID time!!.')
-
-st.write("""
-This case shows how suicide rates have gone down since covid has started. If you start to reason about its relation and causal chaining with covid, there are multiple mindboggling factors that you could talk about for hours and still arrive on no conclusions. Most people would stop trying to analyze the causality and just say that is coincidental.
-""")
-
-########################################## FLIGHTS DATA #################################################
-
-st.header('Flights Data')
-
-image_flights = Image.open('Data/flights.jpg')
-st.image(image_flights, width = 400)
-
-#########################   Visualization Number 1 ########################
-
-st.subheader('US Outgoing flight counts trend for years 1990 - 2020')
-#over the years, departure count
-#sheet = df_brief, columns = ['Total', 'Date']
-
-df1 = pd.DataFrame(df_brief.groupby(by=['Year'])['Total Departures Count'].sum())
-df1.reset_index(inplace=True)
-df1['Total Departures Count'] = df1['Total Departures Count']/12
-df1.loc[df1.Year == 2020,'Total Departures Count'] = df1.loc[df1.Year == 2020,'Total Departures Count'].item() * 12 / 3
-ax = px.line(df1, x="Year", y="Total Departures Count", title='Outgoing Flights Count from US from 1990 to 2020')
-st.plotly_chart(ax)
-
-#########################   Visualization Number 2 ########################
-st.subheader('Outgoing flights monthly traffic over the last 30 years up-until COVID')
-#over the years, departure count, monthly trend
-#sheet = df_brief, columns = ['Total', 'Date']
-
-df2 = df_brief.copy()
-df2 = df2.sort_values(by=['Year', 'Month #'])
-#df2 = df2.groupby(by=['Year'])['Total Departures Count', 'Month'].sum()
-df2 = df2.groupby(['Year', 'Month #', 'Month']).sum().reset_index()
-fig = px.line(df2, x='Month', y='Total Departures Count', animation_frame='Year',
-              range_y=[0,max(df2['Total Departures Count'])+10000])#, barmode='group')
-fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 20 #stay
-fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 10 #switch
-st.plotly_chart(fig)
-#make barcharts of years over the months ---
-
-#########################   Visualization Number 3 ########################
-
-st.subheader('Drill-down monthly trend chart of flight traffic for the top 15 countries')
-#country wise, count tren over months, over years
-#sheet = df_detailed
-#plt.ylabel('Departures Count')
-#plt.title("Drill-down trend chart for months from Januray to March for the top 15 countries")
-
-df3 = df_detailed.copy()
-
-
-user_n_chosen = st.selectbox(
-   "Choose the number of countries you want to analyze",
-    ('Top 5', 'Top 10', 'Top 15','Top 20'),
-    index=2)
-
-
-frame_duration = 150
-transition_duration = 90
-
-top_n = int(user_n_chosen.split()[-1]) #can be a user input
-top_n_countries = list(df3[df3['Year'] == 2019].groupby('Destination_Airport_Country', sort = True).sum()['Total Departures Count'].nlargest(top_n).index)
-
-def convert_datetime(dt):
-    return datetime.strftime(dt, '%Y-%m-%d')
-
-#index_names = df3[df3['Year'] <2019].index
-#df3.drop(index_names, inplace = True)
-df3 = df3.groupby(['Year','Month #','Date', 'Destination_Airport_Country']).sum().reset_index()
-df3 = df3[df3['Destination_Airport_Country'].isin(top_n_countries)]
-df3['Date'] = df3['Date'].apply(convert_datetime)
-fig3 = px.bar(df3,
-               x = 'Destination_Airport_Country',
-               y = 'Total Departures Count',
-               color = 'Destination_Airport_Country',
-               animation_frame='Date')
-fig3.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 150 #stay
-fig3.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 90 #switch
-
-st.plotly_chart(fig3)
-
-st.write("""
-The data clearly shows that Air traffic has reduced significantly after the covid outbreak. The data merely shows a correlation between these two events. After observing the correlation, it is the observer who forms a chain of causality in the mind that because of the worldwide travel restrictions that are caused by covid, there is a reduced air travel. Yes, this seems to be right. But that is not what the data tells us. We are the ones who performed this inference.
-""")
-
 ########################################## CLIMATE DATA #################################################
 
-st.header('Climate Data')
+st.header('⛅️ Climate Data')
 
 image_climate = Image.open('Data/climate.jpg')
 st.image(image_climate, width = 400)
@@ -730,10 +695,68 @@ st.write("""
 For many pollutants, we see a global decline in the concentration in the atmosphere after the outbreak. This trend can be seen in many countries and cities as well. This can be attributed to many factories being shut down lately because of the pandemic. But this is not the only cause we can think of. Governments across the world are taking initiatives to reduce global warming. People are becoming more aware of the pollution caused by the meat industry and are opting to be vegan. Any of this (or all of them) can cause this betterment of the environment. At this point in our illustration, the causal chains formed in our head are becoming longer and harder to keep track of.
 """)
 
-########################################## CONCLUSION #################################################
-st.subheader("Seems like there were quite a few good things that happened during the pandemic which were overlooked.")
+########################################## SUICIDE DATA #################################################
+
+st.header('😞 Suicide Data')
+
+image_suicide = Image.open('Data/suicide.jpeg')
+st.image(image_suicide, width = 400)
+
+### Header
+st.subheader('😞 US Suicide counts trend for years 2017 - 2020')
+
+# Reading the suicide df
+suicide_df = pd.read_csv("Data/suicide_cleaned.csv")
+
+# Multi-select to choose the categories to plot
+st.write('Category wise suicide rate per 100K pop alongside COVID numbers')
+category = st.multiselect("Pick a categories", list(suicide_df.columns), ['Rate Age 45-54', 'Rate Sex Female', 'Rate Age 55-64'])
+
+# Melting the dataframe to plot multiple lines
+suicide_melt_df = pd.melt(suicide_df, id_vars=['Date', 'COVID count'], value_vars=category)
+suicide_melt_df = suicide_melt_df.dropna()
+
+# First plot Data vs Suicide rate
+fig1 = px.line(suicide_melt_df, x="Date", y="value", range_y=[min(suicide_melt_df['value']), max(suicide_melt_df['value'])], color='variable')
+
+# Secondary plot Data vs Covid rate
+fig2 = px.bar(suicide_df, x='Date', y='COVID count', range_y=[0, max(suicide_melt_df['COVID count'])])
+fig2.update_traces(yaxis="y2", opacity=0.6)
+
+# Making Subplots
+subfig = make_subplots(specs=[[{"secondary_y": True}]])
+
+# Naming the axes
+subfig.add_traces(fig1.data + fig2.data)
+subfig.layout.xaxis.title="Date"
+subfig.layout.xaxis.showgrid = False
+subfig.layout.yaxis.title="Suicide / 100K pop"
+subfig.layout.yaxis.showgrid = False
+subfig.layout.yaxis2.title="COVID Rate value"
+subfig.layout.yaxis2.showgrid = False
+
+# Displaying the chart
+st.write(subfig)
+
+# Comparing year wise data for the chosen categories
+st.write('Year wise suicide count for chosen categories')
+fig = px.bar(suicide_melt_df, x='variable', y='value', color='Date', barmode='group')
+
+# Displaying the chart
+st.write(fig)
+
+st.write('Looks like that the Suicide rate in most categories have reduced during the pandemic. Yet another good trend during the sad COVID time!!.')
+
 st.write("""
-Going by the illustrations, we can see that as it gets difficult to form causal explanations in our head, our explanations for the correlation goes from ‘This is why this happened’ to ‘I think it is just a coincidence’. In reality, both are not completely true. We cannot infer causality, but neither can we say that something is coincidental (as everything effects everything). So, when next time someone asks you a question about causality or coincidence of two events, you reply - “It is just chaos!”
+This case shows how suicide rates have gone down since covid has started. If you start to reason about its relation and causal chaining with covid, there are multiple mindboggling factors that you could talk about for hours and still arrive on no conclusions. Most people would stop trying to analyze the causality and just say that is coincidental.
+""")
+
+########################################## CONCLUSION #################################################
+st.subheader("Conclusions/Inferences")
+st.write("""
+##### Going plainly by the assumption that Covid has caused these changes, we can see that there are certain positive things that happened in the last two years in all the aspects that we had a look at in the visualizations. Pollution went down on average, suicide rates fell across the world, the gaming market has gained a lot of traction, air travel has gone down significantly (which also helps the carbon footprint). We can attribute all of this to Covid. 
+
+##### But if we consider the butterfly effect, we can make a different point. Going by the illustrations, we can see that as it gets difficult to form causal inferences in our head of why covid might have caused something, our explanations for the correlation goes from ‘This is why this happened’ to ‘I think it is just a coincidence’. In reality, both are not completely true. We cannot infer causality, but neither can we say that something is coincidental (as everything effects everything). So, when next time someone asks you a question about causality or coincidence of two events, you reply - “It is just chaos!”
 """)
 
 ########################################## DATASET #################################################
@@ -742,41 +765,54 @@ st.title('Dataset')
 
 st.header('Dataset Description')
 
-##### COVID Dataset #####
-
-##### Gaming Dataset #####
-
-##### Suicide Dataset #####
-
-st.subheader('Suicide Rates - Data Source')
+st.subheader('COVID datatset:')
 
 st.write("""
-https://www.kaggle.com/russellyates88/suicide-rates-overview-1985-to-2016
-The dataset contains features respresenting the number of suicides per 100K population for each quater from 2017.
-The data in the dataset is categorised acoording to both age and gender criteria.
+-The [first dataset](https://www.kaggle.com/gpreda/covid-world-vaccination-progress) having country wise COVID active cases data and vaccination data was taken from [Kaggle](https://www.kaggle.com/). 
+-The [second COVID dataset](https://www.kaggle.com/tanuprabhu/population-by-country-2020) having world population was taken from Kaggle.
+
+Issues: COVID count isn't highly reliable because not everyone gets tested. COVID count and vaccination data weren't reported on the same dates.
 """)
 
-st.subheader('Problems faced in using this dataset')
+st.subheader('Suicide Dataset:')
+
 st.write("""
-- There is no authorised data source that authenticates global suicide rate.
-- Few false positives and negatives in the dataset. Few natural death and accidents are reported as suicide and vice versa.
+- The [suicide](https://www.cdc.gov/nchs/nvss/vsrr/mortality-dashboard.htm#) data was taken from the [National Center for Health Statistics](https://www.cdc.gov/nchs/index.htm).
+
+Issues: There is no authorised data source that authenticates global suicide rate. Few false positives and negatives in the dataset. Few natural death and accidents are reported as suicide and vice versa.
 """)
 
-st.subheader('Preprocessing done')
+st.subheader('Gaming Dataset:')
+
 st.write("""
-- Removed some unwanted columns
-- Removed duplicates
-- Typecased the data according to the format needed
-- Reformatted and standardised the datetime
+- The [gaming](https://www.kaggle.com/rankirsh/evolution-of-top-games-on-twitch?select=Twitch_global_data.csv) dataset was taken from Kaggle.
+
+Issues: The twitch global data is not country specific which makes it harder to compare increase in gaming country-wise. The data also does not mention what sort of games were analyzed which makes it hard for us to compare gaming in multiplayer games and single player games.
 """)
 
-##### Flight Dataset #####
+st.subheader('Flight Traffic Dataset:')
 
-##### Climate Dataset #####
+st.write("""
+- The first dataset used to perform analysis on [flight](https://www.kaggle.com/parulpandey/us-international-air-traffic-data) data was taken from Kaggle
+- The second dataset that was used was the [airport codes](https://datahub.io/core/airport-codes) dataset taken from [datahub](https://datahub.io/). 
+
+Issues: Flight departurure information at a country and city level was available only till March of 2020. There are datasets available for recent dates, but lacks granular level information. Hence, we had to perform tradeoff between timeline and granularity.
+""")
+
+st.subheader('Climate Dataset:')
+
+st.write("""
+- The first dataset for [climate and pollution](https://aqicn.org/data-platform/covid19/) was taken from the [Air Quality Open Data Platform](https://aqicn.org/data-platform/token/#/).
+- Another dataset for [country codes](https://www.nationsonline.org/oneworld/country_code_list.htm) was used in this analysis.
+
+Issues: The data source has aggregated the climate data from multiple meteorological sources. There does not seem to be a standard format that need to be followed (example: some countries use MEP AQI while others use AQI). Also not all the data sources report all the metrics. We tackle this by ignoring sources which are not reporting metrics that we are interested in.
+""")
+
+################################# 4 Cs #################################
 
 st.header('Maintaining 4 C\'s')
 
-st.subheader('Completeness')
+st.subheader('✅ Completeness')
 st.write("""
 The considered data is an aggregation of 8 datasets collected from 3 different  sources. Each dataset had multiple empty and junk columns and rows. All the junk and duplicate rows and columns are all removed. Missing values in the original dataset are found out via interpolation. After this simple cleaning, the data was pretty complete.
 
@@ -784,17 +820,17 @@ Different countries had COVID starting on different dates. So  the countries tha
 The first two plots in the website show a delay in the animation for a few countries because of this reason. The animation of a few countries is slow and late because they had no COVID count at that time.
 """)
 
-st.subheader('Coherency')
+st.subheader('✅ Coherency')
 st.write("""
 The datasets we considered weren’t coherent. COVID data was only from 2020 to current date whereas other datasets like gaming, climate, flights and suicide had data starting from different times ranging from 2016 to 2019. To make all the data coherent, we had to extrapolate a few columns and fill those columns with 0. Filling the columns with 0 made sense because COVID wasn’t existing from 2019 to late 2019. Most of the analysis and visualization focuses on the data from 2020 to current data because only in that time range the data is coherent and some meaningful trends were observable.
 """)
 
-st.subheader('Correctness')
+st.subheader('✅ Correctness')
 st.write("""
 We verified the correctness of the data used during Exploratory Data Analysis through outlier detection, random sampling and visualizations. Records from Gaming, Flights and Suicide dataset was correct. However, some data records in the Pollution dataset had off-scale values for sensor data like PM25. This could probably be due to faulty sensors used to measure the values. We corrected this value by smoothing the data in the graph using  exponential smoothing. Another issue was found in COVID dataset where some remote countries, for instance, Saint Helena, reported COVID countries that were greater than its population. These records were explicitly dropped after EDA as a part of outlier detection and removal. 
 """)
 
-st.subheader('Accountability')
+st.subheader('✅ Accountability')
 st.write("""
 The sources for datasets used for this project are Kaggle, Air Quality Open Data Platform, National Center for Health Statistics and DataHub.io. All these are credible information sources.
 """)
@@ -808,6 +844,8 @@ st.subheader('The number of twitch stream watch hours predicted Vs the actual nu
 
 
 ####### GAMING DATA ########
+
+st.title('Growth of Twitch during COVID')
 
 # Preprocessing
 date_object = dt.date(2020,1,1)
@@ -898,13 +936,6 @@ if cityOrCountryFilter is None:
 listOfPlaces = cities if cityOrCountryFilter == 'City' else countries
 
 location = st.selectbox('Location name', listOfPlaces)
-
-# date_range = pd.date_range(start="2021-12-01",end="2022-11-30").to_pydatetime().tolist()
-# for i in range(len(date_range)):
-#     date_range[i] = date_range[i].date()
-
-# date = st.select_slider("Pick a date", options = date_range)
-# date = datetime(date.year, date.month, date.day)
 
 date = datetime(2022, 11, 20)
 
