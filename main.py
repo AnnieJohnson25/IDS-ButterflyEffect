@@ -224,6 +224,7 @@ st.sidebar.markdown("# [Visualizations] (#visualizations)")
 st.sidebar.markdown("# [Dataset](#dataset)")
 st.sidebar.markdown("# [Advanced Machine Learning](#advanced-machine-learning)")
 st.sidebar.markdown("# [Exploratory Data Analysis](#exploratory-data-analysis)")
+st.sidebar.markdown("# [Project Team] (#project-team)")
 
 ########################################## ABOUT #################################################
 
@@ -278,14 +279,6 @@ st.write("""
 
 st.header('Demo')
 st.video('https://youtu.be/fDek6cYijxI')
-
-st.header('Project Team')
-st.write("""
-#### 1. Abhishree Shetty
-#### 2. Sundar Anand
-#### 3. Annie Johnson
-#### 4. Jayant Sravan Tamarapalli
-""")
 
 st.title('Visualizations')
 
@@ -952,5 +945,11 @@ st.write("The complete EDA notebook for this project can be found [here](https:/
 # Images
 images = ['Data/gaming_eda.png', 'Data/flights_eda.png', 'Data/suicide_eda.png', 'Data/climate_eda.png']
 st.image(images, use_column_width=True)
+
+########################################## Team Members #################################################
+
+st.title('Project Team')
+image_team = Image.open('Data/team.jpg')
+st.image(image_team, width = 400)
 
 st.header('Thank you!!')
