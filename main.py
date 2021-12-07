@@ -967,6 +967,8 @@ The sources for datasets used for this project are Kaggle, Air Quality Open Data
 st.title('Exploratory Data Analysis')
 
 st.write("The complete EDA notebook for this project can be found [here](https://github.com/abhishreeshetty/IDS-ButterflyEffect/blob/main/FinalProject_EDA.ipynb)")
+st.write("The complete GITHUB for this project can be found [here](https://github.com/abhishreeshetty/IDS-ButterflyEffect)")
+
 
 # Images
 images = ['Data/gaming_eda.png', 'Data/flights_eda.png', 'Data/suicide_eda.png', 'Data/climate_eda.png']
