@@ -268,10 +268,12 @@ df_brief, df_detailed = load_data()
 # Side Navigation bar
 st.sidebar.markdown("# [About] (#about)")
 st.sidebar.markdown("# [Visualizations] (#visualizations)")
-st.sidebar.markdown("# [Dataset](#dataset)")
+st.sidebar.markdown("# [Conclusions] (#conclusions)")
 st.sidebar.markdown("# [Advanced Machine Learning](#advanced-machine-learning)")
+st.sidebar.markdown("# [Dataset](#dataset)")
 st.sidebar.markdown("# [Exploratory Data Analysis](#exploratory-data-analysis)")
 st.sidebar.markdown("# [Project Team] (#project-team)")
+
 
 ########################################## ABOUT #################################################
 
@@ -325,7 +327,7 @@ st.write("""
 """)
 
 st.header('Demo')
-#st.video('https://youtu.be/fDek6cYijxI')
+st.video('https://www.youtube.com/watch?v=NTaZGFQNKns')
 
 st.title('Visualizations')
 
@@ -651,9 +653,9 @@ st.header('Time Series trends')
 countries_list = datasetOfInterest['Country'].unique()
 cities_list = datasetOfInterest['City'].unique()
 
-cityOrCountryFilter = st.selectbox('Filter Criteria: City or Country',['City', 'Country'])
+cityOrCountryFilter = st.selectbox('Filter Criteria: City or Country',['Country', 'City'])
 if cityOrCountryFilter is None:
-    cityOrCountryFilter = 'City'
+    cityOrCountryFilter = 'Country'
 
 listOfPlaces = cities_list if cityOrCountryFilter == 'City' else countries_list
 
@@ -670,6 +672,9 @@ globalAggregate['Value'] = expSmooth(globalAggregate['Value'])
 globalAggregate.rename(columns={'Value': 'Global Average'}, inplace=True)
 
 displayData = globalAggregate
+
+if len(placeFilter) == 0 and cityOrCountryFilter == 'Country':
+    placeFilter = ['United States', 'Italy']
 
 if placeFilter and len(placeFilter)<5:
     locationData = datasetOfInterest[datasetOfInterest[cityOrCountryFilter].isin(placeFilter)][['Date', 'Value', cityOrCountryFilter]]
@@ -763,87 +768,13 @@ This case shows how suicide rates have gone down since covid has started. If you
 """)
 
 ########################################## CONCLUSION #################################################
-st.subheader("Conclusions/Inferences")
+st.title("🔍 Conclusions")
 st.write("""
 ##### Going plainly by the assumption that Covid has caused these changes, we can see that there are certain positive things that happened in the last two years in all the aspects that we had a look at in the visualizations. Pollution went down on average, suicide rates fell across the world, the gaming market has gained a lot of traction, air travel has gone down significantly (which also helps the carbon footprint). We can attribute all of this to Covid. 
 
-##### But if we consider the butterfly effect, we can make a different point. Going by the illustrations, we can see that as it gets difficult to form causal inferences in our head of why covid might have caused something, our explanations for the correlation goes from ‘This is why this happened’ to ‘I think it is just a coincidence’. In reality, both are not completely true. We cannot infer causality, but neither can we say that something is coincidental (as everything effects everything). So, when next time someone asks you a question about causality or coincidence of two events, you reply - “It is just chaos!”
-""")
+##### But if we consider the butterfly effect, we can make a different point. Going by the illustrations, we can see that as it gets difficult to form causal inferences in our head of why covid might have caused something, our explanations for the correlation goes from ‘This is why this happened’ to ‘I think it is just a coincidence’. In reality, both are not completely true. We cannot infer causality, but neither can we say that something is coincidental (as everything effects everything). So, when next time someone asks you a question about causality or coincidence of two events, you reply - 
 
-########################################## DATASET #################################################
-
-st.title('Dataset')
-
-st.header('Dataset Description')
-
-st.subheader('COVID datatset:')
-
-st.write("""
--The [first dataset](https://www.kaggle.com/gpreda/covid-world-vaccination-progress) having country wise COVID active cases data and vaccination data was taken from [Kaggle](https://www.kaggle.com/). 
--The [second COVID dataset](https://www.kaggle.com/tanuprabhu/population-by-country-2020) having world population was taken from Kaggle.
-
-Issues: COVID count isn't highly reliable because not everyone gets tested. COVID count and vaccination data weren't reported on the same dates.
-""")
-
-st.subheader('Suicide Dataset:')
-
-st.write("""
-- The [suicide](https://www.cdc.gov/nchs/nvss/vsrr/mortality-dashboard.htm#) data was taken from the [National Center for Health Statistics](https://www.cdc.gov/nchs/index.htm).
-
-Issues: There is no authorised data source that authenticates global suicide rate. Few false positives and negatives in the dataset. Few natural death and accidents are reported as suicide and vice versa.
-""")
-
-st.subheader('Gaming Dataset:')
-
-st.write("""
-- The [gaming](https://www.kaggle.com/rankirsh/evolution-of-top-games-on-twitch?select=Twitch_global_data.csv) dataset was taken from Kaggle.
-
-Issues: The twitch global data is not country specific which makes it harder to compare increase in gaming country-wise. The data also does not mention what sort of games were analyzed which makes it hard for us to compare gaming in multiplayer games and single player games.
-""")
-
-st.subheader('Flight Traffic Dataset:')
-
-st.write("""
-- The first dataset used to perform analysis on [flight](https://www.kaggle.com/parulpandey/us-international-air-traffic-data) data was taken from Kaggle
-- The second dataset that was used was the [airport codes](https://datahub.io/core/airport-codes) dataset taken from [datahub](https://datahub.io/). 
-
-Issues: Flight departurure information at a country and city level was available only till March of 2020. There are datasets available for recent dates, but lacks granular level information. Hence, we had to perform tradeoff between timeline and granularity.
-""")
-
-st.subheader('Climate Dataset:')
-
-st.write("""
-- The first dataset for [climate and pollution](https://aqicn.org/data-platform/covid19/) was taken from the [Air Quality Open Data Platform](https://aqicn.org/data-platform/token/#/).
-- Another dataset for [country codes](https://www.nationsonline.org/oneworld/country_code_list.htm) was used in this analysis.
-
-Issues: The data source has aggregated the climate data from multiple meteorological sources. There does not seem to be a standard format that need to be followed (example: some countries use MEP AQI while others use AQI). Also not all the data sources report all the metrics. We tackle this by ignoring sources which are not reporting metrics that we are interested in.
-""")
-
-################################# 4 Cs #################################
-
-st.header('Maintaining 4 C\'s')
-
-st.subheader('✅ Completeness')
-st.write("""
-The considered data is an aggregation of 8 datasets collected from 3 different  sources. Each dataset had multiple empty and junk columns and rows. All the junk and duplicate rows and columns are all removed. Missing values in the original dataset are found out via interpolation. After this simple cleaning, the data was pretty complete.
-
-Different countries had COVID starting on different dates. So  the countries that witnessed later than others, had empty values in the earlier dates. As a part of the preprocessing, we filled 0 because the active case count in those countries were 0 at that time.
-The first two plots in the website show a delay in the animation for a few countries because of this reason. The animation of a few countries is slow and late because they had no COVID count at that time.
-""")
-
-st.subheader('✅ Coherency')
-st.write("""
-The datasets we considered weren’t coherent. COVID data was only from 2020 to current date whereas other datasets like gaming, climate, flights and suicide had data starting from different times ranging from 2016 to 2019. To make all the data coherent, we had to extrapolate a few columns and fill those columns with 0. Filling the columns with 0 made sense because COVID wasn’t existing from 2019 to late 2019. Most of the analysis and visualization focuses on the data from 2020 to current data because only in that time range the data is coherent and some meaningful trends were observable.
-""")
-
-st.subheader('✅ Correctness')
-st.write("""
-We verified the correctness of the data used during Exploratory Data Analysis through outlier detection, random sampling and visualizations. Records from Gaming, Flights and Suicide dataset was correct. However, some data records in the Pollution dataset had off-scale values for sensor data like PM25. This could probably be due to faulty sensors used to measure the values. We corrected this value by smoothing the data in the graph using  exponential smoothing. Another issue was found in COVID dataset where some remote countries, for instance, Saint Helena, reported COVID countries that were greater than its population. These records were explicitly dropped after EDA as a part of outlier detection and removal. 
-""")
-
-st.subheader('✅ Accountability')
-st.write("""
-The sources for datasets used for this project are Kaggle, Air Quality Open Data Platform, National Center for Health Statistics and DataHub.io. All these are credible information sources.
+#### “It is just chaos!”
 """)
 
 ########################################## ADVANCED ML #################################################
@@ -953,6 +884,83 @@ date = datetime(2022, 11, 20)
 specie = st.selectbox("Pick the Pollutant", species_of_interest)
 
 getForecast(datasets[specie], specie, cityOrCountryFilter, location, date)
+
+
+########################################## DATASET #################################################
+
+st.title('Dataset')
+
+st.header('Dataset Description')
+
+st.subheader('COVID datatset:')
+
+st.write("""
+-The [first dataset](https://www.kaggle.com/gpreda/covid-world-vaccination-progress) having country wise COVID active cases data and vaccination data was taken from [Kaggle](https://www.kaggle.com/). 
+-The [second COVID dataset](https://www.kaggle.com/tanuprabhu/population-by-country-2020) having world population was taken from Kaggle.
+
+Issues: COVID count isn't highly reliable because not everyone gets tested. COVID count and vaccination data weren't reported on the same dates.
+""")
+
+st.subheader('Suicide Dataset:')
+
+st.write("""
+- The [suicide](https://www.cdc.gov/nchs/nvss/vsrr/mortality-dashboard.htm#) data was taken from the [National Center for Health Statistics](https://www.cdc.gov/nchs/index.htm).
+
+Issues: There is no authorised data source that authenticates global suicide rate. Few false positives and negatives in the dataset. Few natural death and accidents are reported as suicide and vice versa.
+""")
+
+st.subheader('Gaming Dataset:')
+
+st.write("""
+- The [gaming](https://www.kaggle.com/rankirsh/evolution-of-top-games-on-twitch?select=Twitch_global_data.csv) dataset was taken from Kaggle.
+
+Issues: The twitch global data is not country specific which makes it harder to compare increase in gaming country-wise. The data also does not mention what sort of games were analyzed which makes it hard for us to compare gaming in multiplayer games and single player games.
+""")
+
+st.subheader('Flight Traffic Dataset:')
+
+st.write("""
+- The first dataset used to perform analysis on [flight](https://www.kaggle.com/parulpandey/us-international-air-traffic-data) data was taken from Kaggle
+- The second dataset that was used was the [airport codes](https://datahub.io/core/airport-codes) dataset taken from [datahub](https://datahub.io/). 
+
+Issues: Flight departurure information at a country and city level was available only till March of 2020. There are datasets available for recent dates, but lacks granular level information. Hence, we had to perform tradeoff between timeline and granularity.
+""")
+
+st.subheader('Climate Dataset:')
+
+st.write("""
+- The first dataset for [climate and pollution](https://aqicn.org/data-platform/covid19/) was taken from the [Air Quality Open Data Platform](https://aqicn.org/data-platform/token/#/).
+- Another dataset for [country codes](https://www.nationsonline.org/oneworld/country_code_list.htm) was used in this analysis.
+
+Issues: The data source has aggregated the climate data from multiple meteorological sources. There does not seem to be a standard format that need to be followed (example: some countries use MEP AQI while others use AQI). Also not all the data sources report all the metrics. We tackle this by ignoring sources which are not reporting metrics that we are interested in.
+""")
+
+################################# 4 Cs #################################
+
+st.header('Maintaining 4 C\'s')
+
+st.subheader('✅ Completeness')
+st.write("""
+The considered data is an aggregation of 8 datasets collected from 3 different  sources. Each dataset had multiple empty and junk columns and rows. All the junk and duplicate rows and columns are all removed. Missing values in the original dataset are found out via interpolation. After this simple cleaning, the data was pretty complete.
+
+Different countries had COVID starting on different dates. So  the countries that witnessed later than others, had empty values in the earlier dates. As a part of the preprocessing, we filled 0 because the active case count in those countries were 0 at that time.
+The first two plots in the website show a delay in the animation for a few countries because of this reason. The animation of a few countries is slow and late because they had no COVID count at that time.
+""")
+
+st.subheader('✅ Coherency')
+st.write("""
+The original datasets we considered weren’t coherent. COVID data was only from 2020 to current date whereas other datasets like gaming, climate, flights and suicide had data starting from different times ranging from 2016 to 2019. To make all the data coherent, we had to extrapolate a few columns and fill those columns with 0. Filling the columns with 0 made sense because COVID wasn’t existing from 2019 to late 2019. Most of the analysis and visualization focuses on the data from 2020 to current data because only in that time range the data is coherent and some meaningful trends were observable.
+""")
+
+st.subheader('✅ Correctness')
+st.write("""
+We verified the correctness of the data used during Exploratory Data Analysis through outlier detection, random sampling and visualizations. Records from Gaming, Flights and Suicide dataset was correct. However, some data records in the Pollution dataset had off-scale values for sensor data like PM25. This could probably be due to faulty sensors used to measure the values. We corrected this value by smoothing the data in the graph using  exponential smoothing. Another issue was found in COVID dataset where some remote countries, for instance, Saint Helena, reported COVID countries that were greater than its population. These records were explicitly dropped after EDA as a part of outlier detection and removal. 
+""")
+
+st.subheader('✅ Accountability')
+st.write("""
+The sources for datasets used for this project are Kaggle, Air Quality Open Data Platform, National Center for Health Statistics and DataHub.io. All these are credible information sources.
+""")
 
 ########################################## EDA #################################################
 
