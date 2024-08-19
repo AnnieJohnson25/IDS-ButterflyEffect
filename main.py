@@ -38,7 +38,7 @@ st.markdown(
  
 ########################################## LOADING DATA #################################################
 
-@st.cache()
+@st.cache_data()
 def getDatasets():
     df2019 = pd.read_csv("Data/pollutionData2019.csv", encoding = "UTF-8")
     df2020 = pd.read_csv("Data/pollutionData2020.csv", encoding = "UTF-8")
@@ -54,18 +54,18 @@ def getDatasets():
     
     return datasets
 
-@st.cache
+@st.cache_data
 def getCountryCodes():
     df_with_country_code = pd.read_csv("Data/wikipedia-iso-country-codes.csv", encoding = "UTF-8")
     return df_with_country_code
 
-@st.cache
+@st.cache_data
 def get_country_covid():
     country_df = pd.read_csv("Data/covid_country_wise.csv")
     country_df['date'] = pd.to_datetime(country_df['date'], format='%d/%m/%y').dt.date
     return country_df
 
-@st.cache
+@st.cache_data
 def get_twitch_data():
     twitch_df=pd.read_csv('Data/Twitch_global_data.csv')
     # Concatenating year and month columns into month-year column
@@ -92,7 +92,7 @@ def get_twitch_data():
     twitch_df["month-year"]=pd.to_datetime(twitch_df["month-year"]).dt.to_period('m')
     return twitch_df
 
-@st.cache
+@st.cache_data
 def get_covid_global_data():
     covid_df=pd.read_csv('Data/covid_global.csv')
     # Preprocessing the covid_df data
@@ -101,14 +101,14 @@ def get_covid_global_data():
     covid_df=covid_df.drop_duplicates(subset=['month-year'], keep='first')
     return covid_df
 
-@st.cache
+@st.cache_data
 def get_suicide_data():
     suicide_df = pd.read_csv("Data/suicide_cleaned.csv")
     return suicide_df
 
-@st.cache
+@st.cache_data
 def getGeographyData(locationData, specieFilter):
-    locationData = locationData.pivot_table(index = "Date", columns = 'Country Code', values = 'Value').reset_index().astype({"Date": "datetime64"}).set_index('Date')
+    locationData = locationData.pivot_table(index = "Date", columns = 'Country Code', values = 'Value').reset_index().astype({"Date": "datetime64[ns]"}).set_index('Date')
     locationData = expSmooth(locationData).reset_index()
     dates_data = locationData
     dates_data = dates_data.melt(id_vars='Date', var_name='Country',
@@ -191,8 +191,9 @@ def getForecast(dataset, specie, cityOrCountryFilter, location, date):
     st.line_chart(chart)
 
 def plotCloropleth(dates_data, specieFilter, date, background):
-    dates_data = dates_data[dates_data['Date'] == date]
-
+    #dates_data = dates_data[dates_data['Date'] == pd.to_datetime(date)]#[['id', f'{specieFilter}', 'Country']]
+    st.write("after filtering")
+    st.write(type(dates_data))
     source = alt.topo_feature(data.world_110m.url, "countries")
     date_str = date.strftime("%d %B %Y")
     
@@ -243,7 +244,7 @@ def reportTrends(locationData, regionCriteria):
 def expSmooth(series, alpha = 0.02):
     return series.ewm(alpha=alpha, ignore_na = True).mean()
 
-@st.cache
+@st.cache_data
 def load_data():
     month_dict = {1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct",
                   11:"Nov", 12:"Dec"}
@@ -395,11 +396,12 @@ country_vaccine_df = vaccine_df[(vaccine_df['country'] == option)]
 date = st.select_slider("Pick a date", options = country_vaccine_df[country_vaccine_df['active_cases'].notna()]['date'].unique())
 
 # Calculating the percentage of vaccination
-
-vacc_info_df = country_vaccine_df[(country_vaccine_df['date'] == pd.to_datetime(str(date)))]
+# below line is deprecated and this change was made for count dataframe as well
+#vacc_info_df = country_vaccine_df[(country_vaccine_df['date'] == pd.to_datetime(str(date)))]
+vacc_info_df = country_vaccine_df[(country_vaccine_df['date'] == date)]
 vacc = vacc_info_df['people_vaccinated'].iloc[0]
 per = round(vacc_info_df['percentage_vaccinated'].iloc[0], 2)
-count = country_df[(country_df['country'] == option) & (country_df['date'] == pd.to_datetime(str(date)))]['active_cases'].iloc[0]
+count = country_df[(country_df['country'] == option) & (country_df['date'] == date)]['active_cases'].iloc[0]
 
 # Displaying the results
 st.write("The total number of vaccinated people are " + str(vacc) + ", the vaccination percentage as of " + str(date) + " is " + str(per) + "%, yet the active cases count is " + str(count))
@@ -451,7 +453,9 @@ st.subheader('Outgoing flights monthly traffic over the last 30 years up-until C
 df2 = df_brief.copy()
 df2 = df2.sort_values(by=['Year', 'Month #'])
 #df2 = df2.groupby(by=['Year'])['Total Departures Count', 'Month'].sum()
-df2 = df2.groupby(['Year', 'Month #', 'Month']).sum().reset_index()
+df2 = df2.groupby(by=['Year','Month #','Month'])['Total Departures Count'].sum().reset_index()
+
+#df2 = df2.groupby(['Year', 'Month #', 'Month']).sum().reset_index()
 fig = px.line(df2, x='Month', y='Total Departures Count', animation_frame='Year',
               range_y=[0,max(df2['Total Departures Count'])+10000])#, barmode='group')
 fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 20 #stay
@@ -478,10 +482,10 @@ user_n_chosen = st.selectbox(
 
 frame_duration = 150
 transition_duration = 90
-
 top_n = int(user_n_chosen.split()[-1]) #can be a user input
-top_n_countries = list(df3[df3['Year'] == 2019].groupby('Destination_Airport_Country', sort = True).sum()['Total Departures Count'].nlargest(top_n).index)
-
+# Changed the line below as top_n_countries uncommented
+#top_n_countries = list(df3[df3['Year'] == 2019].groupby('Destination_Airport_Country', sort = True).sum()['Total Departures Count'].nlargest(top_n).index)
+top_n_countries = list(df3.groupby('Destination_Airport_Country', sort = True)['Total Departures Count'].sum().nlargest(top_n).index)
 def convert_datetime(dt):
     return datetime.strftime(dt, '%Y-%m-%d')
 
@@ -667,7 +671,7 @@ if cityOrCountryFilter == 'Country':
 elif cityOrCountryFilter == 'City':
     plural = 'cities'
 
-globalAggregate = datasetOfInterest[['Date','Value']].groupby('Date').aggregate('median').reset_index().astype({"Date": "datetime64"}).set_index('Date')
+globalAggregate = datasetOfInterest[['Date','Value']].groupby('Date').aggregate('median').reset_index().astype({"Date": "datetime64[ns]"}).set_index('Date')
 globalAggregate['Value'] = expSmooth(globalAggregate['Value'])
 globalAggregate.rename(columns={'Value': 'Global Average'}, inplace=True)
 
@@ -678,7 +682,7 @@ if len(placeFilter) == 0 and cityOrCountryFilter == 'Country':
 
 if placeFilter and len(placeFilter)<5:
     locationData = datasetOfInterest[datasetOfInterest[cityOrCountryFilter].isin(placeFilter)][['Date', 'Value', cityOrCountryFilter]]
-    locationData = locationData.pivot_table(index = "Date", columns = cityOrCountryFilter, values = 'Value').reset_index().astype({"Date": "datetime64"}).set_index('Date')
+    locationData = locationData.pivot_table(index = "Date", columns = cityOrCountryFilter, values = 'Value').reset_index().astype({"Date": "datetime64[ns]"}).set_index('Date')
     locationData = expSmooth(locationData)
     displayData = globalAggregate.merge(locationData, on='Date')
 elif len(placeFilter)>=5:
@@ -688,7 +692,7 @@ st.line_chart(displayData)
 
 reportTrends(displayData, cityOrCountryFilter)
 
-st.header('Geographic trends')
+#st.header('Geographic trends')
 
 world = data.world_110m.url
 
@@ -702,14 +706,16 @@ date_range = pd.date_range(start="2019-01-01",end="2021-11-20").to_pydatetime().
 for i in range(len(date_range)):
     date_range[i] = date_range[i].date()
 
-date = st.select_slider("Pick a date", options = date_range)
-date = datetime(date.year, date.month, date.day)
-final_map = plotCloropleth(dates_data, specieFilter, date, background)
-plot = st.altair_chart(final_map)
+#date = st.select_slider("Pick a date", options = date_range)
+#date = datetime(date.year, date.month, date.day)
+#I added below line
+#dates_data = dates_data[dates_data['Date'] == pd.to_datetime(date)]
+#final_map = plotCloropleth(dates_data, specieFilter, date, background)
+#plot = st.altair_chart(final_map)
 
-st.write("""
-For many pollutants, we see a global decline in the concentration in the atmosphere after the outbreak. This trend can be seen in many countries and cities as well. This can be attributed to many factories being shut down lately because of the pandemic. But this is not the only cause we can think of. Governments across the world are taking initiatives to reduce global warming. People are becoming more aware of the pollution caused by the meat industry and are opting to be vegan. Any of this (or all of them) can cause this betterment of the environment. At this point in our illustration, the causal chains formed in our head are becoming longer and harder to keep track of.
-""")
+#st.write("""
+#For many pollutants, we see a global decline in the concentration in the atmosphere after the outbreak. This trend can be seen in many countries and cities as well. This can be attributed to many factories being shut down lately because of the pandemic. But this is not the only cause we can think of. Governments across the world are taking initiatives to reduce global warming. People are becoming more aware of the pollution caused by the meat industry and are opting to be vegan. Any of this (or all of them) can cause this betterment of the environment. At this point in our illustration, the causal chains formed in our head are becoming longer and harder to keep track of.
+#""")
 
 ########################################## SUICIDE DATA #################################################
 
